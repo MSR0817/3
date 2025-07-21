@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>自然保护区监管效能三维分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        .dashboard {
+            display: flex;
+            width: 1200px;
+            margin: 20px auto;
+            font-family: "Microsoft YaHei", sans-serif;
+            gap: 20px;
+        }
+        .panel {
+            flex: 1;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+            padding: 15px;
+            background: white;
+        }
+        .panel-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+        #chart1, #chart2, #chart3 {
+            height: 400px;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+            border-radius: 2px;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <!-- 监测能力对比 -->
+    <div class="panel">
+        <div class="panel-title">监测能力对比 (2018 vs 2021)</div>
+        <div id="chart1"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background:#dd6b66;"></div>
+                <span>传统监管</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#61a0a8;"></div>
+                <span>无人机监管</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 空间分布分析 -->
+    <div class="panel">
+        <div class="panel-title">违规活动空间分布 (2000年监测)</div>
+        <div id="chart2"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background:#c23531;"></div>
+                <span>核心区</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#2f4554;"></div>
+                <span>缓冲区</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#61a0a8;"></div>
+                <span>实验区</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 规划对比分析 -->
+    <div class="panel">
+        <div class="panel-title">各级保护区问题分布</div>
+        <div id="chart3"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background:#c4ccd3;"></div>
+                <span>违规面积</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+    // 监测能力对比 - 雷达图
+    var chart1 = echarts.init(document.getElementById('chart1'));
+    var option1 = {
+        tooltip: {
+            trigger: 'item',
+            formatter: function(params) {
+                var data = params.seriesIndex === 0 ?
+                    ['1公顷', '15起', '3-7天', '65%'] :
+                    ['0.04公顷', '92起', '4小时内', '92%'];
+                return `
+                    <strong>${params.name}</strong><br/>
+                    传统监管: ${data[params.dataIndex]}<br/>
+                    无人机监管: ${data[params.dataIndex]}<br/>
+                    提升幅度: ${['2500%','513%','95%','27个百分点'][params.dataIndex]}
+                `;
+            }
+        },
+        radar: {
+            indicator: [
+                { name: '最小识别面积', max: 100 },
+                { name: '违法发现量', max: 100 },
+                { name: '案件核实时间', max: 100 },
+                { name: '执法准确率', max: 100 }
+        ],
+        radius: '70%'
+        },
+        series: [{
+            type: 'radar',
+            data: [
+                {
+                    value: [20, 15, 70, 65],
+                    name: '传统监管',
+                    areaStyle: { color: 'rgba(221, 107, 102, 0.4)' },
+                    itemStyle: { color: '#dd6b66' }
+                },
+                {
+                    value: [95, 90, 95, 92],
+                    name: '无人机监管',
+                    areaStyle: { color: 'rgba(97, 160, 168, 0.4)' },
+                    itemStyle: { color: '#61a0a8' }
+                }
+            ]
+        }]
+    };
+
+    // 空间分布分析 - 饼图
+    var chart2 = echarts.init(document.getElementById('chart2'));
+    var option2 = {
+        tooltip: {
+            trigger: 'item',
+            formatter: function(params) {
+                var cases = {
+                    '核心区': '其他人工设施 (93.13%)',
+                    '缓冲区': '道路建设',
+                    '实验区': '农业扩张'
+                };
+                return `
+                    <strong>${params.name}</strong><br/>
+                    占比: ${params.percent}%<br/>
+                    主要违规: ${cases[params.name]}<br/>
+                    典型案例: ${['23°15′40″K, 114°26′6″E','23°18′12″K, 114°23′45″E','23°12′33″K, 114°29′18″E'][params.dataIndex]}
+                `;
+            }
+        },
+        series: [{
+            type: 'pie',
+            radius: ['40%', '70%'],
+            data: [
+                { value: 40.89, name: '核心区', itemStyle: { color: '#c23531' } },
+                { value: 0.44, name: '缓冲区', itemStyle: { color: '#2f4554' } },
+                { value: 58.67, name: '实验区', itemStyle: { color: '#61a0a8' } }
+            ],
+            label: {
+                formatter: '{b}: {d}%'
+            },
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }]
+    };
+
+    // 规划对比分析 - 柱状图
+    var chart3 = echarts.init(document.getElementById('chart3'));
+    var option3 = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: function(params) {
+                var problems = {
+                    '国家级': '零星农业活动',
+                    '省级': '旅游设施扩建',
+                    '市级': '工矿开发',
+                    '县级': '多种类型混合'
+                };
+                var areas = {
+                    '国家级': '核心区边缘',
+                    '省级': '实验区农用地带',
+                    '市级': '缓冲区外围',
+                    '县级': '整个保护区范围'
+                };
+                return `
+                    <strong>${params[0].name}</strong><br/>
+                    违规面积: ${params[0].value}公顷<br/>
+                    主要问题: ${problems[params[0].name]}<br/>
+                    重点区域: ${areas[params[0].name]}
+                `;
+            }
+        },
+        xAxis: {
+            type: 'category',
+            data: ['国家级', '省级', '市级', '县级'],
+            axisLabel: { rotate: 0 }
+        },
+        yAxis: { type: 'value', name: '违规面积(公顷)' },
+        series: [{
+            type: 'bar',
+            data: [0.73, 62.95, 43.99, 62.02],
+            itemStyle: {
+                color: function(params) {
+                    var colorList = ['#c4ccd3', '#a7b5c2', '#8a9fb1', '#6d88a0'];
+                    return colorList[params.dataIndex];
+                }
+            },
+            label: {
+                show: true,
+                position: 'top',
+                formatter: '{c}公顷'
+            }
+        }]
+    };
+
+    chart1.setOption(option1);
+    chart2.setOption(option2);
+    chart3.setOption(option3);
+
+    // 响应式调整
+    window.addEventListener('resize', function() {
+        chart1.resize();
+        chart2.resize();
+        chart3.resize();
+    });
+</script>
+</body>
+</html>
